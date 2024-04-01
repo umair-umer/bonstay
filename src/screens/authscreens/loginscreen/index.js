@@ -51,7 +51,10 @@ const LoginScreen = ({navigation}) => {
     console.log('ok', loginData);
     try {
       const response = await Login('/v1/bonstay/auth/login', loginData);
-      // dispatch(loginSuccess({ token: 'abc123', data:response}));
+      dispatch(loginSuccess({
+        token: response.token || 'defaultToken',
+        data: response.user || {},
+      }));
       console.log('Response:', response);
       console.log('opouiyf', loginData);
       showMessage({

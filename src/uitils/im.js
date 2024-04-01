@@ -8,7 +8,9 @@ import thirdone from  "../asset/thirdone.png"
 import detailslocaiimag from "../asset/detailslocaiimag.png"
 import avatr from "../asset/avatr.png"
 import mapimage from "../asset/mapimage.png"
-
+import locationhouse from "../asset/locationhouse.png"
+import pricegraph from '../asset/pricegraph.png'
+import graphrange from '../asset/graphrange.png'
 
 
 const Images = {
@@ -21,7 +23,10 @@ const Images = {
     thirdone,
     detailslocaiimag,
     avatr,
-    mapimage
+    mapimage,
+    locationhouse,
+    pricegraph,
+    graphrange
 
 
 };

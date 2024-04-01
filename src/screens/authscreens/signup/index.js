@@ -90,9 +90,9 @@ const SignUp = ({navigation, route}) => {
       });
     } catch (error) {
       console.error(error);
-      const errorMessage =
-        error.response?.data?.error || error.message || 'Signup failed';
-      console.log(errorMessage, 'lkljkhgjfhd');
+      // const errorMessage =
+      //   error.response?.data?.error || error.message || 'Signup failed';
+      // console.log(errorMessage, 'lkljkhgjfhd');
       showMessage({
         message: 'Error',
         description: error || 'Signup failed',

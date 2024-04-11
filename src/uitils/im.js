@@ -11,6 +11,8 @@ import mapimage from "../asset/mapimage.png"
 import locationhouse from "../asset/locationhouse.png"
 import pricegraph from '../asset/pricegraph.png'
 import graphrange from '../asset/graphrange.png'
+import pro from '../asset/pro.png'
+import verfication from '../asset/verfication.png'
 
 
 const Images = {
@@ -26,7 +28,9 @@ const Images = {
     mapimage,
     locationhouse,
     pricegraph,
-    graphrange
+    graphrange,
+    pro,
+    verfication
 
 
 };

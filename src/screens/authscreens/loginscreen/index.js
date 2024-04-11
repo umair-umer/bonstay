@@ -22,6 +22,7 @@ import {
   Arroeback,
   CustomButton,
   Inputtext,
+  Loader,
   SignInWithSocial,
 } from '../../../component';
 import {Button, TextInput} from 'react-native-paper';
@@ -36,6 +37,8 @@ const LoginScreen = ({navigation}) => {
   const [password, setpassword] = useState('');
   const [showEmailError, setShowEmailError] = useState(false);
   const [Error, setError] = useState();
+  const[load,setload]=useState(false)
+
   const dispatch = useDispatch();
 
   const handleLogin = async () => {
@@ -50,7 +53,8 @@ const LoginScreen = ({navigation}) => {
     };
     console.log('ok', loginData);
     try {
-      const response = await Login('/v1/bonstay/auth/login', loginData);
+      setload(true)
+      const response = await Login('/auth/login', loginData);
       dispatch(loginSuccess({
         token: response.token || 'defaultToken',
         data: response.user || {},
@@ -67,6 +71,7 @@ const LoginScreen = ({navigation}) => {
       // navigation.navigate('HomeScreen');
     } catch (err) {
       console.log(err, '0000');
+      setload(false)
       setError(err);
       showMessage({
         message: 'Error',
@@ -96,58 +101,62 @@ const LoginScreen = ({navigation}) => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <FlashMessage position="top" />
-      <View style={styles.submaincontainer}>
-        <StatusBar barStyle="dark-content" />
-        <Arroeback />
-        <View style={styles.wellcomtextContainer}>
-          <Text style={styles.wellcometext}>Welcome Back!</Text>
-          <Text style={styles.welltext}>
-            Log into your account and explore vacation destinations worldwide
-          </Text>
-        </View>
-        <View>
-          <Inputtext
-            Username={'Username'}
-            Iconname={'person'}
-            placeholder={'EMAIL ADDRESS'}
-            onChangeText={handleEmailChange}
-            value={email}
-            errorMessage="Please fill in your email"
-            showError={showEmailError}
-          />
-          <Inputtext
-            Username={'Password'}
-            Iconname={'key'}
-            placeholder={'INSERT YOUR PASSWROD HERE'}
-            onChangeText={handlePassword}
-            value={password}
-            errorMessage="Please fill in your password"
-            showError={showEmailError}
-            secureTextEntry={false}
-          />
-        </View>
-        <View style={styles.buttonContainer}>
-          <CustomButton title="login" onPress={handleLogin} />
-        </View>
-
-        <Text style={styles.forgetpasstext}>Forgot password?</Text>
-
-        <View style={styles.socialauth}>
-          <SignInWithSocial
-            iconname={'apple'}
-            Title="Sign in with Apple"
-            color={'#fff'}
-          />
-          <SignInWithSocial
-            iconname={'google'}
-            Title="Sign in with Apple"
-            backgroundColor={'#fff'}
-          />
-        </View>
+   <>
+   {
+    load?<Loader/>: <SafeAreaView style={styles.container}>
+    <FlashMessage position="top" />
+    <View style={styles.submaincontainer}>
+      <StatusBar barStyle="dark-content" />
+      <Arroeback />
+      <View style={styles.wellcomtextContainer}>
+        <Text style={styles.wellcometext}>Welcome Back!</Text>
+        <Text style={styles.welltext}>
+          Log into your account and explore vacation destinations worldwide
+        </Text>
       </View>
-    </SafeAreaView>
+      <View>
+        <Inputtext
+          Username={'Username'}
+          Iconname={'person'}
+          placeholder={'EMAIL ADDRESS'}
+          onChangeText={handleEmailChange}
+          value={email}
+          errorMessage="Please fill in your email"
+          showError={showEmailError}
+        />
+        <Inputtext
+          Username={'Password'}
+          Iconname={'key'}
+          placeholder={'INSERT YOUR PASSWROD HERE'}
+          onChangeText={handlePassword}
+          value={password}
+          errorMessage="Please fill in your password"
+          showError={showEmailError}
+          secureTextEntry={false}
+        />
+      </View>
+      <View style={styles.buttonContainer}>
+        <CustomButton title="login" onPress={handleLogin} />
+      </View>
+
+      <Text style={styles.forgetpasstext}>Forgot password?</Text>
+
+      <View style={styles.socialauth}>
+        <SignInWithSocial
+          iconname={'apple'}
+          Title="Sign in with Apple"
+          color={'#fff'}
+        />
+        <SignInWithSocial
+          iconname={'google'}
+          Title="Sign in with Apple"
+          backgroundColor={'#fff'}
+        />
+      </View>
+    </View>
+  </SafeAreaView>
+   }
+   </>
   );
 };
 

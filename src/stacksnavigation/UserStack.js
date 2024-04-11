@@ -5,15 +5,18 @@ import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import UserHome from '../screens/userscreens/userhome';
-import {Dimensions} from 'react-native';
 import ProfileScreen from '../screens/userscreens/profile';
 import Chatscreen from '../screens/userscreens/chatscreen';
 import Explorescreen from '../screens/userscreens/explorescreen';
 import SavedScreen from '../screens/userscreens/savedscreen';
 import LocationDetails from '../screens/userscreens/LocationDetails';
 import RentScreen from '../screens/userscreens/Rentscreen';
-const {width, height} = Dimensions.get('window');
+import Verifiedprofile from '../screens/userscreens/profile/profileverification';
+import Persnalprofilescreen from '../screens/userscreens/profile/persnalinformationscreen';
+import { ChatRoom, Nofifictionchatbox } from '../screens/chatscreens';
 
+import {Dimensions} from 'react-native';
+const {width, height} = Dimensions.get('window');
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 const UserStack = () => (
@@ -21,12 +24,29 @@ const UserStack = () => (
     <Stack.Screen name="UserHome" component={UserTAb} />
     <Stack.Screen name="locationdetail" component={LocationDetails} />
     <Stack.Screen name="rentscreen" component={RentScreen} />
+    <Stack.Screen name="chatroom" component={ChatRoom} />
 
   </Stack.Navigator>
 );
 
 export default UserStack;
-
+const Profilescreens = () => {
+  return ( // Add the return statement here
+    <Stack.Navigator screenOptions={{headerShown: false}}>
+      <Stack.Screen name="Profilescreen" component={ProfileScreen} />
+      <Stack.Screen name="VerificationProfile" component={Verifiedprofile} />
+      <Stack.Screen name="personalinformationscreeen" component={Persnalprofilescreen} />
+    </Stack.Navigator>
+  );
+};
+const Chatparent = () => {
+  return ( // Add the return statement here
+    <Stack.Navigator screenOptions={{headerShown: false}}>
+      <Stack.Screen name="Notifichat" component={Nofifictionchatbox} />
+    
+    </Stack.Navigator>
+  );
+};
 function UserTAb() {
   return (
     <Tab.Navigator
@@ -66,7 +86,7 @@ function UserTAb() {
             <MaterialIcons name="explore" size={size} color={color} />
           ),
         }}
-        name="Explore"
+        name="Bookings"
         component={Explorescreen}
       />
       <Tab.Screen
@@ -76,7 +96,7 @@ function UserTAb() {
           ),
         }}
         name="Chat"
-        component={Chatscreen}
+        component={Chatparent}
       />
       <Tab.Screen
         options={{
@@ -94,7 +114,7 @@ function UserTAb() {
           ),
         }}
         name="Profile"
-        component={ProfileScreen}
+        component={Profilescreens}
       />
     </Tab.Navigator>
   );

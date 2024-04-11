@@ -9,7 +9,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import AntDesign from 'react-native-vector-icons/AntDesign';
-import {calculateFontSize} from '../../uitils/font';
+import {PoppinsBold, calculateFontSize} from '../../uitils/font';
 import {useNavigation} from '@react-navigation/native';
 const {width, height} = Dimensions.get('window');
 const Arroeback = ({ title, leftIconName, rightIcons }) => {
@@ -19,7 +19,7 @@ const Arroeback = ({ title, leftIconName, rightIcons }) => {
     <TouchableOpacity onPress={() => navigation.goBack()}>
       <AntDesign name={leftIconName || "left"} style={styles.arrowicon} />
     </TouchableOpacity>
-    <Text>{title || "Edit List"}</Text>
+    <Text style={styles.title}>{title || "Edit List"}</Text>
     <View style={styles.iconsContainer}>
       {rightIcons && rightIcons.map((icon, index) => (
         <AntDesign key={index} name={icon.name} style={[styles.arrowicon, icon.style]} />
@@ -45,4 +45,9 @@ const styles = StyleSheet.create({
     color: '#000',
     fontSize: calculateFontSize(20),
   },
+  title:{
+    color: '#000',
+    fontSize: calculateFontSize(12),
+    fontFamily:PoppinsBold
+  }
 });

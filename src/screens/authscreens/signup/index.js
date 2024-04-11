@@ -22,6 +22,7 @@ import {
   Arroeback,
   CustomButton,
   Inputtext,
+  Loader,
   SignInWithSocial,
 } from '../../../component';
 import {Button, TextInput} from 'react-native-paper';
@@ -35,6 +36,7 @@ import {useDispatch} from 'react-redux';
 import {loginSuccess} from '../../../store/action/authActions';
 
 const SignUp = ({navigation, route}) => {
+  const[load,setload]=useState(false)
   const {role} = route?.params;
   const dispatch = useDispatch();
   console.log(role, 'role');
@@ -76,7 +78,8 @@ const SignUp = ({navigation, route}) => {
     };
 
     try {
-      const responseData = await apiCall('/v1/bonstay/auth/signup', data);
+      setload(true)
+      const responseData = await apiCall('/auth/signup', data);
       console.log(responseData);
       dispatch(loginSuccess({
         token: responseData.token || 'defaultToken',
@@ -89,20 +92,22 @@ const SignUp = ({navigation, route}) => {
         type: 'success',
       });
     } catch (error) {
-      console.error(error);
+      console.error(error.message);
+      setload(false)
       // const errorMessage =
       //   error.response?.data?.error || error.message || 'Signup failed';
       // console.log(errorMessage, 'lkljkhgjfhd');
       showMessage({
         message: 'Error',
-        description: error || 'Signup failed',
+        description: error.message || 'Signup failed', 
         type: 'error',
       });
     }
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+   <>
+   {load ? <Loader/>: <SafeAreaView style={styles.container}>
       <View style={styles.submaincontainer}>
         <FlashMessage position="top" />
         <StatusBar barStyle="dark-content" />
@@ -183,7 +188,8 @@ const SignUp = ({navigation, route}) => {
           />
         </View>
       </View>
-    </SafeAreaView>
+    </SafeAreaView>}
+   </>
   );
 };
 

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useState} from 'react';
 import {
   View,
   Text,
@@ -9,26 +9,53 @@ import {
   Dimensions,
   SafeAreaView,
   ScrollView,
+  FlatList,
 } from 'react-native';
+
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
-
+import MapView, {PROVIDER_GOOGLE} from 'react-native-maps';
+import {Marker} from 'react-native-maps';
 import Images from '../../../uitils/im';
-import {PoppinsBold, PoppinsRegular, PoppinsSemibold, calculateFontSize} from '../../../uitils/font';
+import {
+  PoppinsBold,
+  PoppinsRegular,
+  PoppinsSemibold,
+  calculateFontSize,
+} from '../../../uitils/font';
+import {baseImageUrl} from '../../../services/api';
 const {width, height} = Dimensions.get('window');
-
 function LocationDetails({navigation, route}) {
-  const data = route?.params;
+  const {
+    title,
+    location,
+    rooms,
+    area,
+    facilities,
+    lat,
+    lng,
+    nearByLocations,
+    description,
+    estimation,
+    images,
+  } = route?.params.locationData;
   console.log('====================================');
   console.log(route.params);
   console.log('====================================');
 
-
-  const FacilityItem = ({ icon, name, distance }) => {
+  const latitude = parseFloat(lat);
+  const longitude = parseFloat(lng);
+  const [markerCoords, setMarkerCoords] = useState({
+    latitude: latitude,
+    longitude: longitude,
+    latitudeDelta: 0.0922,
+    longitudeDelta: 0.0421,
+  });
+  const FacilityItem = ({icon, name, distance}) => {
     return (
       <View style={styles.facilityItem}>
         <View style={styles.iconContainer}>{icon}</View>
@@ -39,7 +66,7 @@ function LocationDetails({navigation, route}) {
       </View>
     );
   };
-  const TestimonialCard = ({ name, testimonial, rating }) => {
+  const TestimonialCard = ({name, testimonial, rating}) => {
     // Generate star ratings
     const stars = [];
     for (let i = 0; i < 5; i++) {
@@ -50,14 +77,14 @@ function LocationDetails({navigation, route}) {
           size={24}
           color="#00AAE5"
           style={styles.star}
-        />
+        />,
       );
     }
-  
+
     return (
       <View style={styles.testimonialCard}>
         <Image
-          source={{ uri: 'https://via.placeholder.com/150' }} // Replace with actual image uri
+          source={{uri: 'https://via.placeholder.com/150'}} // Replace with actual image uri
           style={styles.avatar}
         />
         <View style={styles.testimonialContent}>
@@ -69,6 +96,7 @@ function LocationDetails({navigation, route}) {
       </View>
     );
   };
+
   return (
     <SafeAreaView>
       <ScrollView>
@@ -76,25 +104,36 @@ function LocationDetails({navigation, route}) {
           <StatusBar barStyle="light-content" />
 
           <View style={styles.arrowback}>
-            <TouchableOpacity onPress={()=>navigation.goBack()}>
-
-            <MaterialIcons name="keyboard-arrow-left" size={40} color="black" />
+            <TouchableOpacity onPress={() => navigation.goBack()}>
+              <MaterialIcons
+                name="keyboard-arrow-left"
+                size={40}
+                color="black"
+              />
             </TouchableOpacity>
           </View>
 
           <View style={styles.imageContainer}>
-            <Image
-              source={Images.detailslocaiimag}
-              style={styles.propertyImage}
+            <FlatList
+              horizontal
+              data={images}
+              renderItem={({item, index}) => {
+                console.log(`${baseImageUrl}${item}`, 'flatlist');
+                return (
+                  <View style={styles.imageWrapper}>
+                    <Image
+                      key={index}
+                      source={{uri: `${baseImageUrl}${item}`}} // Replace with the URI of the image
+                      style={styles.propertyImage}
+                    />
+                  </View>
+                );
+              }}
+              keyExtractor={item => item}
+              showsHorizontalScrollIndicator={false}
             />
-            <TouchableOpacity style={styles.playButton}>
-              <MaterialIcons
-                name="play-circle-filled"
-                size={64}
-                color="white"
-              />
-            </TouchableOpacity>
-            <Text style={styles.paginationText}>1/11</Text>
+            {/* If you want to keep the pagination text, you need to manage the state to update the current index */}
+            <Text style={styles.paginationText}>1/{images.length}</Text>
           </View>
 
           <TouchableOpacity style={styles.watchButton}>
@@ -104,13 +143,13 @@ function LocationDetails({navigation, route}) {
         <View style={styles.container}>
           <View style={styles.container2}>
             <View style={styles.headername}>
-              <Text style={styles.title}>Entire Mountain View House</Text>
+              <Text style={styles.title}>{title}</Text>
               <TouchableOpacity>
                 <FontAwesome name="heart-o" size={24} color="black" />
               </TouchableOpacity>
             </View>
             <Text style={styles.subTitle}>491 Burgoyne Street</Text>
-            <Text style={styles.subTitle}>California, United States</Text>
+            <Text style={styles.subTitle}>{location}</Text>
             <View style={styles.maindeatlcon}>
               <View style={styles.dtails}>
                 <AntDesign name="star" style={styles.icons} />
@@ -118,20 +157,20 @@ function LocationDetails({navigation, route}) {
               </View>
               <View style={styles.dtails}>
                 <AntDesign name="home" style={styles.icons} />
-                <Text style={styles.detailtex}>2 room</Text>
+                <Text style={styles.detailtex}>{rooms} room</Text>
               </View>
             </View>
             <View style={styles.maindeatlcon}>
               <View style={styles.dtails}>
                 <Ionicons name="location-sharp" style={styles.icons} />
-                <Text style={styles.detailtex}>Malang, Probolinggo</Text>
+                <Text style={styles.detailtex}>{location}</Text>
               </View>
               <View style={styles.dtails}>
                 <MaterialCommunityIcons
                   name="map-marker-distance"
                   style={styles.icons}
                 />
-                <Text style={styles.detailtex}>874 m2</Text>
+                <Text style={styles.detailtex}>{area}</Text>
               </View>
             </View>
             <View style={styles.separator} />
@@ -168,100 +207,91 @@ function LocationDetails({navigation, route}) {
               </TouchableOpacity>
             </View>
             <View>
-              <View style={styles.facility}>
-                <FontAwesome5 name="snowflake" size={24}  color="#00AAE5" />
-                <Text style={styles.facilityText}>Air conditioner</Text>
-              </View>
-              <View style={styles.facility}>
-                <FontAwesome5 name="utensils" size={24} color="#00AAE5" />
-                <Text style={styles.facilityText}>Air conditioner</Text>
-              </View>
-              <View style={styles.facility}>
-                <FontAwesome5 name="car" size={24} color="#00AAE5"  />
-                <Text style={styles.facilityText}>Air conditioner</Text>
-              </View>
-              <View style={styles.facility}>
-                <FontAwesome5 name="wifi" size={24} color="#00AAE5"  />
-                <Text style={styles.facilityText}>Air conditioner</Text>
-              </View>
+              {facilities.map((facility, index) => (
+                <View key={index} style={styles.facility}>
+                  <FontAwesome name="dot-circle-o" size={24} color="#00AAE5" />
+                  <Text style={styles.facilityText}>{facility}</Text>
+                </View>
+              ))}
             </View>
           </View>
-          <View style={styles.mapcontainer}>
           <View style={styles.mapimagecontainer}>
-            <Image
-              source={Images.mapimage}
-              style={{width: '100%', height: '100%'}}
-            />
+            <MapView
+              provider={PROVIDER_GOOGLE}
+              style={styles.map}
+              onLayout={() =>
+                setMarkerCoords({
+                  latitude: latitude,
+                  longitude: longitude,
+                  latitudeDelta: 0.0922,
+                  longitudeDelta: 0.0421,
+                })
+              }
+              region={markerCoords}>
+              <Marker coordinate={markerCoords} title={location} />
+            </MapView>
+          </View>
+          <View style={styles.containerfacilites}>
+            <Text style={styles.headernearfacilites}>
+              Nearest public facilities
+            </Text>
+            <View style={styles.facilityList}>
+              {nearByLocations.map((near, index) => (
+                <FacilityItem
+                  key={index} // Make sure key is unique
+                  icon={
+                    <FontAwesome
+                      name="dot-circle-o" // This should be dynamic based on the type of facility
+                      size={24}
+                      color="black"
+                    />
+                  }
+                  name={near.name}
+                  distance={`${near.distance}m`}
+                />
+              ))}
+            </View>
+          </View>
+          <View style={styles.card}>
+            <Text style={[styles.headertext, styles.headname]}>
+              About location's neighborhood
+            </Text>
+            <Text style={styles.paragraph}>{description}</Text>
+
+            <View style={styles.footer}>
+              <Text style={styles.footerText}>Average living cost</Text>
+              <Text
+                style={
+                  styles.price
+                }>{`${estimation[0].averageCost}$/month`}</Text>
+            </View>
           </View>
         </View>
-        <View style={styles.containerfacilites}>
-      <Text style={styles.headernearfacilites}>Nearest public facilities</Text>
-      <View style={styles.facilityList}>
-        <FacilityItem
-          icon={<MaterialIcons name="local-grocery-store" size={24} color="black" />}
-          name="Minimarket"
-          distance="200m"
-        />
-        <FacilityItem
-          icon={<MaterialIcons name="local-hospital" size={24} color="black" />}
-          name="Hospital"
-          distance="130m"
-        />
-        <FacilityItem
-          icon={<MaterialCommunityIcons name="food-fork-drink" size={24} color="black" />}
-          name="Public canteen"
-          distance="400m"
-        />
-        <FacilityItem
-          icon={<MaterialCommunityIcons name="train" size={24} color="black" />}
-          name="Train station"
-          distance="500m"
-        />
-      </View>
-    </View>
-    <View style={styles.card}>
-      <Text style={styles.header}>About location's neighborhood</Text>
-      <Text style={styles.paragraph}>
-        This cabin comes with Smart Home System and beautiful viking style. You can see sunrise in
-        the morning with City View from full Glass Window.
-      </Text>
-      <Text style={styles.paragraph}>
-        This unit is surrounded by business district of West Surabaya that offers you the city life
-        as well as wide range of culinary.
-      </Text>
-      <Text style={styles.paragraph}>
-        This apartment equipped with Washing Machine, Electric Stove, Microwave, Refrigerator,
-        Cutlery.
-      </Text>
-      <View style={styles.footer}>
-        <Text style={styles.footerText}>Average living cost</Text>
-        <Text style={styles.price}>500$/month</Text>
-      </View>
-    </View>
+        <View style={{padding: 16}}>
+          <Text style={styles.header}>Testimonials</Text>
+          <TestimonialCard
+            name="Sans Jose"
+            rating={4}
+            testimonial="My wife and I had a dream of downsizing from our house in Cape Elizabeth into a small condo closer to where we work and play in Portland. David and his skilled team helped make that dream a reality. The sale went smoothly, and we just closed on an ideal new place we're excited to call home..."
+          />
+          <TestimonialCard
+            name="Anita Cruz"
+            rating={5}
+            testimonial="My wife & I have moved 6 times in the last 25 years. Obviously, we've dealt with many realtors both on the buying and selling side. I have to say that David is by far the BEST realtor we've ever worked with, his professionalism, personality, attention to detail, responsiveness and..."
+          />
+          <View style={styles.footers}>
+            <View>
+              <Text
+                style={styles.price}>{`${estimation[0].price}$/month`}</Text>
+              <Text style={styles.paymentEstimation}>Payment estimation</Text>
+            </View>
+            <TouchableOpacity
+              style={styles.rentButton}
+              onPress={() => navigation.navigate('rentscreen')}>
+              <Text style={styles.rentButtonText}>Rent</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-   <View style={{padding:16}}>
-   <Text style={styles.header}>Testimonials</Text>
-      <TestimonialCard
-        name="Sans Jose"
-        rating={4}
-        testimonial="My wife and I had a dream of downsizing from our house in Cape Elizabeth into a small condo closer to where we work and play in Portland. David and his skilled team helped make that dream a reality. The sale went smoothly, and we just closed on an ideal new place we're excited to call home..."
-      />
-      <TestimonialCard
-        name="Anita Cruz"
-        rating={5}
-        testimonial="My wife & I have moved 6 times in the last 25 years. Obviously, we've dealt with many realtors both on the buying and selling side. I have to say that David is by far the BEST realtor we've ever worked with, his professionalism, personality, attention to detail, responsiveness and..."
-      />
-      <View style={styles.footers}>
-        <View>
-        <Text style={styles.price}>$2,700 / month</Text>
-        <Text style={styles.paymentEstimation}>Payment estimation</Text>
-        </View>
-        <TouchableOpacity style={styles.rentButton} onPress={()=>navigation.navigate('rentscreen')}>
-          <Text style={styles.rentButtonText}>Rent</Text>
-        </TouchableOpacity>
-      </View>
-   </View>
-      
       </ScrollView>
     </SafeAreaView>
   );
@@ -274,9 +304,9 @@ const styles = StyleSheet.create({
     // backgroundColor: '#f5f5f5',
     padding: 16,
   },
-  headername:{
-flexDirection:"row",
-justifyContent:"space-between"
+  headername: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
   },
   arrowback: {
     backgroundColor: '#fff',
@@ -288,7 +318,7 @@ justifyContent:"space-between"
     position: 'absolute',
     top: height * 0.03,
     zIndex: 99999,
-    marginHorizontal:width*0.03,
+    marginHorizontal: width * 0.03,
   },
 
   imageContainer: {
@@ -347,8 +377,9 @@ justifyContent:"space-between"
     marginVertical: height * 0.02,
   },
   title: {
-    fontWeight: 'bold',
-    fontSize: 18,
+    fontFamily: PoppinsBold,
+    fontSize: calculateFontSize(18),
+    color: '#000',
   },
   subTitle: {
     color: 'grey',
@@ -416,6 +447,7 @@ justifyContent:"space-between"
     alignItems: 'center',
   },
   facilitiescontainer: {
+    marginBottom: height * 0.02,
     // backgroundColor:"red",
     // padding:16
   },
@@ -437,12 +469,12 @@ justifyContent:"space-between"
     // backgroundColor:"red",
     paddingVertical: height * 0.03,
   },
-  mapimagecontainer: {
-    width: width * 0.9,
-    height: height * 0.3,
-    overflow: 'hidden',
-    borderRadius: 15,
-  },
+  // mapimagecontainer: {
+  //   width: width * 0.9,
+  //   height: height * 0.3,
+  //   overflow: 'hidden',
+  //   borderRadius: 15,
+  // },
   facilityList: {
     // backgroundColor: 'white',
     borderRadius: 5,
@@ -455,7 +487,7 @@ justifyContent:"space-between"
   },
   iconContainer: {
     marginRight: 10,
-    color:"#00AAE5"
+    color: '#00AAE5',
   },
   infoContainer: {
     flexDirection: 'row',
@@ -472,7 +504,7 @@ justifyContent:"space-between"
     fontSize: calculateFontSize(13),
     color: 'grey',
   },
-  headernearfacilites:{
+  headernearfacilites: {
     fontFamily: PoppinsBold,
     fontSize: calculateFontSize(15),
     color: '#000',
@@ -490,11 +522,12 @@ justifyContent:"space-between"
     // shadowOpacity: 0.1,
     // elevation: 2,
   },
-  header: {
+  headertext: {
     fontSize: calculateFontSize(20),
     fontWeight: 'bold',
     fontFamily: PoppinsSemibold,
-    marginBottom: 10,
+    marginBottom: height * 0.02,
+    color: '#000',
   },
   paragraph: {
     fontSize: 16,
@@ -510,13 +543,15 @@ justifyContent:"space-between"
     alignItems: 'center',
   },
   footerText: {
-    fontSize:calculateFontSize(16),
+    fontSize: calculateFontSize(16),
     color: '#888',
     fontFamily: PoppinsSemibold,
   },
   price: {
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontSize: calculateFontSize(18),
+
+    color: '#888',
+    fontFamily: PoppinsSemibold,
   },
   testimonialCard: {
     flexDirection: 'row',
@@ -527,7 +562,7 @@ justifyContent:"space-between"
     shadowColor: '#000',
     shadowOpacity: 0.1,
     shadowRadius: 3,
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: {width: 0, height: 1},
     elevation: 3,
   },
   avatar: {
@@ -539,10 +574,7 @@ justifyContent:"space-between"
   testimonialContent: {
     flex: 1,
   },
-  name: {
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
+
   stars: {
     flexDirection: 'row',
     marginBottom: 5,
@@ -564,17 +596,13 @@ justifyContent:"space-between"
     borderRadius: 6,
     padding: 20,
     alignItems: 'center',
-    flexDirection:"row",
-    justifyContent:"space-between"
+    flexDirection: 'row',
+    justifyContent: 'space-between',
   },
-  price: {
-    fontSize: calculateFontSize(24),
-    fontWeight: 'bold',
-    marginBottom: 5,
-  },
+
   paymentEstimation: {
     fontSize: calculateFontSize(14),
-    fontFamily:PoppinsRegular,
+    fontFamily: PoppinsRegular,
     color: '#888',
     marginBottom: 20,
   },
@@ -588,5 +616,30 @@ justifyContent:"space-between"
     color: 'white',
     fontSize: calculateFontSize(16),
     fontWeight: 'bold',
+  },
+  mapimagecontainer: {
+    width: width * 0.9,
+    height: height * 0.3,
+    overflow: 'hidden',
+    borderRadius: 15,
+    justifyContent:"center",
+    alignSelf:"center"
+  },
+  map: {
+    width: '100%',
+    backgroundColor: 'red',
+    height: '100%',
+    overflow: 'hidden',
+    // height: sizes.screenHeight * 0.4,
+    // backgroundColor: "#fff"
+    borderRadius: 10,
+  },
+  containerfacilites: {
+    marginTop: height * 0.03,
+  },
+  imageWrapper: {
+    width: width * 0.99,
+    height: height * 0.37,
+    marginHorizontal: width * 0.01,
   },
 });

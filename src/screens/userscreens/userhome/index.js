@@ -1,4 +1,4 @@
-import React from 'react';
+import React,{useState,useEffect} from 'react';
 import {
   StyleSheet,
   View,
@@ -9,6 +9,7 @@ import {
   Dimensions,
   SafeAreaView,
   FlatList,
+  TextInput
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import AntDesign from 'react-native-vector-icons/AntDesign';
@@ -17,8 +18,51 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 import Images from '../../../uitils/im';
 import {PoppinsSemibold, calculateFontSize} from '../../../uitils/font';
 const {width, height} = Dimensions.get('window');
-
+import Geolocation from '@react-native-community/geolocation';
 const UserHome = () => {
+  const [placeName, setPlaceName] = useState('');
+
+  useEffect(() => {
+    findCoordinates();
+  }, []);
+
+  const findCoordinates = () => {
+    Geolocation.getCurrentPosition(
+      (position) => {
+        getPlaceName(position.coords.latitude, position.coords.longitude);
+      },
+      (error) => Alert.alert(error.message),
+      { enableHighAccuracy: true, timeout: 20000, maximumAge: 1000 }
+    );
+  };
+
+  const getPlaceName = async (latitude, longitude) => {
+    const apiKey = 'AIzaSyBV_p4Zd0frLEef7ZDqd_26qC7kqQ5u2u4'; // Replace with your actual Google API key
+    const apiUrl = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${apiKey}`;
+
+    try {
+      const response = await fetch(apiUrl);
+      const json = await response.json();
+      if (json.results && json.results.length > 0) {
+        setPlaceName(json.results[0].formatted_address);
+        console.log(placeName,"placename");
+      } else {
+        setPlaceName('No address found');
+      }
+    } catch (error) {
+      console.error(error);
+      setPlaceName('Error getting address');
+    }
+  };
+  const onNotificationsPress = () => {
+    console.log('Notifications Pressed');
+    // Add your navigation or functionality here
+  };
+
+  const onCalendarPress = () => {
+    console.log('Calendar Pressed');
+    // Add your navigation or functionality here
+  };
   const locations = [
     {
       id: '1',
@@ -252,7 +296,31 @@ const UserHome = () => {
     <SafeAreaView>
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.container}>
-          <Text style={styles.welcomeText}>Welcome to Bonstay</Text>
+        <Text style={styles.welcomeText}>Welcome to Bonstay</Text>
+        <View style={styles.containerhead}>
+      <View style={styles.dropdown}>
+        <Ionicons name="location-sharp" size={20} color="#4F8EF7" />
+        <Text style={styles.dropdownText}>{placeName}</Text>
+        <TouchableOpacity onPress={onNotificationsPress}>
+          <Ionicons name="notifications-outline" size={20} color="grey" />
+        </TouchableOpacity>
+        <TouchableOpacity onPress={onCalendarPress} style={styles.calendarIcon}>
+          <Ionicons name="calendar-outline" size={20} color="grey" />
+        </TouchableOpacity>
+        {/* <Ionicons name="caret-down" size={20} color="grey" /> */}
+      </View>
+
+      <TouchableOpacity style={styles.searchContainer}>
+        <Ionicons name="search" size={20} color="grey" />
+        <TextInput
+          placeholder="Search address, city, location"
+          style={styles.searchInput}
+          
+        />
+       <Ionicons name="options" size={20} color="grey" />
+      </TouchableOpacity>
+    </View>
+         
           <View style={styles.locationheader}>
             <Text style={styles.locationhead}>Near your location</Text>
             <View
@@ -323,7 +391,42 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: height * 0.04,
   },
+  containerhead: {
+    backgroundColor: 'white',
+    padding: 10,
+    justifyContent: 'center',
+  },
+  dropdown: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: height*0.04,
+    paddingHorizontal: 10,
 
+  },
+  dropdownText: {
+    fontSize: 16,
+    marginLeft: 10,
+    marginRight: 5,
+    flex: 1,
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F0F0F0',
+    borderRadius: 20,
+    paddingHorizontal: 15,
+    height: 40,
+  },
+  searchInput: {
+    flex: 1,
+    marginLeft: 10,
+    color: 'grey',
+    fontSize: 16,
+  },
+  calendarIcon: {
+    marginLeft: 10, // add some spacing
+  },
   welcomeText: {
     fontSize: calculateFontSize(20),
     color: '#000',

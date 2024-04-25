@@ -1,4 +1,3 @@
-
 import {
   SafeAreaView,
   ScrollView,
@@ -9,29 +8,42 @@ import {
   TouchableOpacity,
   Dimensions,
 } from 'react-native';
-import Entypo from 'react-native-vector-icons/Entypo'
-import FontAwesome from 'react-native-vector-icons/FontAwesome'
-import Ionicons from 'react-native-vector-icons/Ionicons'
-import AntDesign from 'react-native-vector-icons/AntDesign'
-import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons'
+import Entypo from 'react-native-vector-icons/Entypo';
+import FontAwesome from 'react-native-vector-icons/FontAwesome';
+import Ionicons from 'react-native-vector-icons/Ionicons';
+import AntDesign from 'react-native-vector-icons/AntDesign';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import Images from '../../../uitils/im';
-import { PoppinsBold, PoppinsRegular, calculateFontSize } from '../../../uitils/font';
-const { width, height } = Dimensions.get('window')
+import {
+  PoppinsBold,
+  PoppinsRegular,
+  calculateFontSize,
+} from '../../../uitils/font';
+import { logout } from '../../../store/action/authActions';
+import { useDispatch } from 'react-redux';
+const {width, height} = Dimensions.get('window');
 
 const Verifiedprofile = ({navigation}) => {
+dispatch=useDispatch()
+  const handleLogout = () => {
+    dispatch(logout()); // Dispatch the logout action
+    // navigation.navigate('LoginScreen'); // Navigate to the login screen
+  };
+
   return (
     <SafeAreaView style={styles.container}>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: height * 0.02 }}>
-        <TouchableOpacity onPress={()=>navigation.goBack()} >
-          <Entypo
-            name='chevron-left'
-            size={26}
-            color='#000'
-          />
+      <View
+        style={{
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          marginBottom: height * 0.02,
+        }}>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Entypo name="chevron-left" size={26} color="#000" />
         </TouchableOpacity>
-        <Image source={Images.pro} style={styles.profileimage}/>
-        <TouchableOpacity>
-          <Text style={styles.editbutton}>Edit</Text>
+        <Image source={Images.pro} style={styles.profileimage} />
+        <TouchableOpacity onPress={handleLogout}>
+          <Text style={styles.editbutton}>Logout</Text>
         </TouchableOpacity>
       </View>
       <View style={styles.topHead}>
@@ -39,37 +51,40 @@ const Verifiedprofile = ({navigation}) => {
         <Text style={styles.topPara}>Joined in 2024</Text>
       </View>
       <View style={styles.topHead}>
-        <Image source={Images.verfication}  />
+        <Image source={Images.verfication} />
         <Text style={styles.sechead}>Identity verification</Text>
-        <Text style={styles.secpara}>Show other your really with the identity verification badge.</Text>
+        <Text style={styles.secpara}>
+          Show other your really with the identity verification badge.
+        </Text>
         <TouchableOpacity style={styles.identitybuttonmain}>
           <Text style={styles.identitybutton}>Get the badge</Text>
         </TouchableOpacity>
       </View>
-      <View style={{ marginVertical: height * 0.03 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: height * 0.01 }}>
-          <AntDesign
-          name='check'
-          size={26}
-          color= '#00AAE5'
-          />
+      <View style={{marginVertical: height * 0.03}}>
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            paddingVertical: height * 0.01,
+          }}>
+          <AntDesign name="check" size={26} color="#00AAE5" />
           <Text style={styles.checkedtext}>Email address</Text>
         </View>
-        <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: height * 0.01 }}>
-          <AntDesign
-          name='check'
-          size={26}
-          color= '#00AAE5'
-          />
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            paddingVertical: height * 0.01,
+          }}>
+          <AntDesign name="check" size={26} color="#00AAE5" />
           <Text style={styles.checkedtext}>Phone Number</Text>
         </View>
       </View>
     </SafeAreaView>
-  )
-}
+  );
+};
 
 const styles = StyleSheet.create({
-
   container: {
     flex: 1,
     padding: 20,
@@ -78,8 +93,8 @@ const styles = StyleSheet.create({
   editbutton: {
     color: '#000',
     fontSize: calculateFontSize(15),
-    fontFamily:PoppinsBold,
-    textDecorationLine: 'underline'
+    fontFamily: PoppinsBold,
+    textDecorationLine: 'underline',
   },
 
   topHead: {
@@ -91,9 +106,9 @@ const styles = StyleSheet.create({
   topHeading: {
     color: '#000',
     fontSize: calculateFontSize(15),
-    fontFamily:PoppinsBold,
+    fontFamily: PoppinsBold,
 
-    fontWeight: '500'
+    fontWeight: '500',
   },
 
   topPara: {
@@ -126,19 +141,18 @@ const styles = StyleSheet.create({
   identitybutton: {
     color: '#10AFE7',
     fontSize: 18,
-    fontWeight: '500'
+    fontWeight: '500',
   },
 
-  checkedtext: { 
+  checkedtext: {
     color: '#000',
     fontSize: calculateFontSize(12),
-    fontFamily:PoppinsBold,
+    fontFamily: PoppinsBold,
     paddingLeft: width * 0.04,
   },
   profileimage: {
-    width: width*0.25,
-    height: height*0.2,
+    width: width * 0.25,
+    height: height * 0.2,
   },
-
 });
-export default Verifiedprofile
+export default Verifiedprofile;

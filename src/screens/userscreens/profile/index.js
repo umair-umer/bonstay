@@ -78,7 +78,7 @@ const ProfileScreen = ({navigation}) => {
                   <Text style={styles.contentinner}>Payments & payouts</Text>
                 </View>
                 <View style={{paddingLeft: width * 0.18}}>
-                  <TouchableOpacity>
+                  <TouchableOpacity onPress={()=>navigation.navigate("payoutscreen")}>
                     <Entypo name="chevron-right" size={26} color="#000" />
                   </TouchableOpacity>
                 </View>
@@ -128,7 +128,7 @@ const ProfileScreen = ({navigation}) => {
                   <Text style={styles.contentinner}>List Your Space</Text>
                 </View>
                 <View style={{paddingLeft: width * 0.27}}>
-                  <TouchableOpacity>
+                  <TouchableOpacity onPress={()=>navigation.navigate("propertylist")}>
                     <Entypo name="chevron-right" size={26} color="#000" />
                   </TouchableOpacity>
                 </View>

@@ -1,3 +1,4 @@
 import HostHome from "./Hosthome";
+import Propertylist from "./propertylist";
 
-export default HostHome;
+export  {HostHome,Propertylist};

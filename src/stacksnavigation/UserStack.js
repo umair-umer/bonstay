@@ -14,8 +14,8 @@ import RentScreen from '../screens/userscreens/Rentscreen';
 import Verifiedprofile from '../screens/userscreens/profile/profileverification';
 import Persnalprofilescreen from '../screens/userscreens/profile/persnalinformationscreen';
 import { ChatRoom, Nofifictionchatbox } from '../screens/chatscreens';
-
 import {Dimensions} from 'react-native';
+import { PaymentPayout } from '../screens/userscreens/profile/paymentpayoutsscreens';
 const {width, height} = Dimensions.get('window');
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -36,6 +36,7 @@ const Profilescreens = () => {
       <Stack.Screen name="Profilescreen" component={ProfileScreen} />
       <Stack.Screen name="VerificationProfile" component={Verifiedprofile} />
       <Stack.Screen name="personalinformationscreeen" component={Persnalprofilescreen} />
+      <Stack.Screen name="payoutscreen" component={PaymentPayout} />
     </Stack.Navigator>
   );
 };

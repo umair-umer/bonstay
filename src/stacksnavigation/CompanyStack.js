@@ -12,12 +12,13 @@ import Explorescreen from '../screens/userscreens/explorescreen';
 import SavedScreen from '../screens/userscreens/savedscreen';
 import LocationDetails from '../screens/userscreens/LocationDetails';
 import RentScreen from '../screens/userscreens/Rentscreen';
-import HostHome from '../screens/hostscreens';
 import Verifiedprofile from '../screens/userscreens/profile/profileverification';
 import Persnalprofilescreen from '../screens/userscreens/profile/persnalinformationscreen';
 import { ChatRoom, Nofifictionchatbox } from '../screens/chatscreens';
-const {width, height} = Dimensions.get('window');
+import { PaymentPayout } from '../screens/userscreens/profile/paymentpayoutsscreens';
+import { HostHome, Propertylist } from '../screens/hostscreens';
 
+const {width, height} = Dimensions.get('window');
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -25,6 +26,7 @@ const UserStack = () => (
   <Stack.Navigator screenOptions={{headerShown: false}}>
     <Stack.Screen name="Userhost" component={UserTAb} />
     <Stack.Screen name="chatroom" component={ChatRoom} />
+    <Stack.Screen name="locationdetail" component={LocationDetails} />
   </Stack.Navigator>
 );
 
@@ -36,6 +38,9 @@ const Profilescreens = () => {
       <Stack.Screen name="Profilescreen" component={ProfileScreen} />
       <Stack.Screen name="VerificationProfile" component={Verifiedprofile} />
       <Stack.Screen name="personalinformationscreeen" component={Persnalprofilescreen} />
+      <Stack.Screen name="payoutscreen" component={PaymentPayout} />
+      <Stack.Screen name="propertylist" component={Propertylist} />
+
     </Stack.Navigator>
   );
 };

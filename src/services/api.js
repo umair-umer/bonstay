@@ -2,6 +2,7 @@ import axios from 'axios';
 import { useSelector } from 'react-redux';
 
 const API_BASE_URL = 'https://bonstay.democlientlink.com/api/v1/bonstay';
+export const baseImageUrl = 'https://bonstay.democlientlink.com/';
 export const apiCall = async (endpoint, data, method = 'post') => {
   const url = `${API_BASE_URL}${endpoint}`;
   try {

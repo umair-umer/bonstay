@@ -12,7 +12,7 @@ import {
   TextInput,
 } from 'react-native';
 const {width, height} = Dimensions.get('window');
-import {Arroeback, Inputtext} from '../../../component';
+import {Arroeback, Inputtext, Loader} from '../../../component';
 import Images from '../../../uitils/im';
 import {useNavigation} from '@react-navigation/native';
 import AntDesign from 'react-native-vector-icons/AntDesign';
@@ -24,14 +24,17 @@ import {
   calculateFontSize,
 } from '../../../uitils/font';
 import {ScrollView} from 'react-native-gesture-handler';
-import MapView, {PROVIDER_GOOGLE} from 'react-native-maps';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import {launchImageLibrary} from 'react-native-image-picker';
 import MultiSlider from '@ptomasroos/react-native-multi-slider';
 import axios from 'axios';
+import MapView, {PROVIDER_GOOGLE} from 'react-native-maps';
 import {Marker} from 'react-native-maps';
 import debounce from 'lodash.debounce';
+import {submitProperty} from '../../../services/api';
+import {useSelector} from 'react-redux';
 const HostHome = ({navigation}) => {
+  const token = useSelector(state => state?.auth?.token);
   const [images, setImages] = useState([]);
   const [sliderValues, setSliderValues] = useState([0, 75]);
   const [description, setDescription] = useState('');
@@ -41,46 +44,53 @@ const HostHome = ({navigation}) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [markerCoords, setMarkerCoords] = useState(null);
   const [autoCompleteResults, setAutoCompleteResults] = useState([]);
+  const [value, setValue] = useState('');
+  const [input, setInput] = useState('');
+  const [facilityName, setFacilityName] = useState('');
 
-  const increment = (category: 'bedrooms' | 'bathrooms' | 'beds') => {
+  const [listingTitle, setListingTitle] = useState('');
+  const [rooms, setRooms] = useState(0);
+  const[load,setload]=useState()
+
+
+  const increment = (category: 'bedrooms' | 'bathrooms' | 'beds' | 'rooms') => {
     if (category === 'bedrooms') setBedrooms(bedrooms + 1);
+    else if (category === 'rooms') setRooms(rooms + 1);
     else if (category === 'bathrooms') setBathrooms(bathrooms + 1);
     else if (category === 'beds') setBeds(beds + 1);
   };
 
-  const decrement = (category: 'bedrooms' | 'bathrooms' | 'beds') => {
+  const decrement = (category: 'bedrooms' | 'bathrooms' | 'beds' | 'rooms') => {
     if (category === 'bedrooms' && bedrooms > 0) setBedrooms(bedrooms - 1);
     else if (category === 'bathrooms' && bathrooms > 0)
       setBathrooms(bathrooms - 1);
     else if (category === 'beds' && beds > 0) setBeds(beds - 1);
+    else if (category === 'rooms' && rooms > 0) setRooms(rooms - 1);
   };
 
-  const sliderChange = values => setSliderValues(values);
-
-  const CustomMarker = () => {
-    return (
-      <View
-        style={{
-          height: 30, // Set the size of the marker
-          width: 30, // Set the width of the marker
-          borderRadius: 15, // Half of the height and width to make it circular
-          backgroundColor: '#7ADDFC', // Background color of the marker
-          borderWidth: 2, // Width of the border
-          borderColor: 'white', // Color of the border
-          justifyContent: 'center',
-          alignItems: 'center',
-        }}
-      />
-    );
-  };
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectfacilities, setfacilities] = useState('');
+  const [selectedrenttype, setRenttype] = useState('');
 
   const handleCategorySelect = category => {
     setSelectedCategory(category);
   };
-  const handleFacilitiesSelect = facilities => {
-    setfacilities(facilities);
+  const [selectFacilities, setSelectFacilities] = useState([]);
+  const [facilities, setFacilities] = useState([]);
+  const handleAddFacility = () => {
+    if (facilityName && input) {
+      const newFacility = {
+        name: facilityName,
+        distance: input
+      };
+      // Update the facilities array with the new facility
+      setFacilities(prevFacilities => [...prevFacilities, newFacility]);
+      setFacilityName(''); // Clear the input after adding
+      setInput(''); // Clear the input after adding
+    }
+  };
+  const handleRentTypeSelect = renttype => {
+    setRenttype(renttype);
   };
 
   const renderCategoryButton = category => (
@@ -103,22 +113,41 @@ const HostHome = ({navigation}) => {
     </TouchableOpacity>
   );
 
-  const renderFacilitiesButton = facilities => (
+  const renderFacilitiesButton = facility => (
     <TouchableOpacity
       style={[
         styles.categoryButton,
-        facilities === selectfacilities
+        selectFacilities.includes(facility)
           ? styles.selectedCategory
           : styles.unselectedCategory,
       ]}
-      onPress={() => handleFacilitiesSelect(facilities)}>
+      onPress={() => handleFacilitiesSelect(facility)}>
+      <Text
+        style={
+          selectFacilities.includes(facility)
+            ? styles.selectedCategoryText
+            : styles.unselectedCategoryText
+        }>
+        {facility}
+      </Text>
+    </TouchableOpacity>
+  );
+  const renderRentTypeButton = renttype => (
+    <TouchableOpacity
+      style={[
+        styles.categoryButton,
+        renttype === selectedrenttype
+          ? styles.selectedCategory
+          : styles.unselectedCategory,
+      ]}
+      onPress={() => handleRentTypeSelect(renttype)}>
       <Text
         style={
           facilities === selectfacilities
             ? styles.selectedCategoryText
             : styles.unselectedCategoryText
         }>
-        {facilities}
+        {renttype}
       </Text>
     </TouchableOpacity>
   );
@@ -128,8 +157,9 @@ const HostHome = ({navigation}) => {
       '====',
       selectfacilities,
       'selected category',
+      selectFacilities,
     );
-  }, [selectedCategory, selectfacilities]);
+  }, [selectedCategory, selectFacilities, selectedrenttype]);
 
   const rightIcons = [
     {name: 'sharealt', style: {marginRight: 10}},
@@ -245,324 +275,467 @@ const HostHome = ({navigation}) => {
       console.error('Error fetching place details', error);
     }
   };
+  // Inside your HostHome component
 
+  const handleFacilitiesSelect = facility => {
+    setSelectFacilities(prevSelectedFacilities => {
+      // Check if the facility is already selected
+      if (prevSelectedFacilities.includes(facility)) {
+        // If it is, remove it from the array
+        return prevSelectedFacilities.filter(f => f !== facility);
+      } else {
+        // If it's not, add it to the array
+        return [...prevSelectedFacilities, facility];
+      }
+    });
+  };
+  useEffect(() => {
+    console.log(
+      selectedCategory,
+      '====',
+      selectfacilities,
+      'selected category',
+      selectFacilities,
+    );
+  }, [selectedCategory, selectFacilities, selectedrenttype]);
+  const renderFacilitiesList = () => (
+    <View>
+      {facilities.map((facility, index) => (
+        <View key={index} style={styles.facilityItem}>
+          <Text style={styles.facilityName}>{facility.name}</Text>
+          <Text style={styles.facilityDistance}>{facility.distance} meters</Text>
+        </View>
+      ))}
+    </View>
+  );
+
+
+  const submitProperty = async () => {
+    // Constructing form data
+    const formData = new FormData();
+    formData.append('title', listingTitle);
+    formData.append('description', description);
+    formData.append('category', selectedCategory);
+    formData.append(
+      'facilities',JSON.stringify(selectFacilities)
+    );
+    formData.append(
+      'nearByLocations',
+      JSON.stringify(facilities),)
+    formData.append('location', searchQuery);
+    formData.append(
+      'lat',
+      markerCoords ? markerCoords.latitude.toString() : '',
+    );
+    formData.append(
+      'lng',
+      markerCoords ? markerCoords.longitude.toString() : '',
+    );
+    images.forEach((image, index) => {
+      formData.append(`images`, {
+        uri: image.uri,
+        name: `image${index}.jpg`, // or use image.name if it's available
+        type: 'image/jpeg', // or image.type
+      });
+    });
+    formData.append(
+      'estimation',
+      JSON.stringify([
+        {price: value, averageCost: value, rentType: selectedrenttype},
+      ]),
+    ); // This seems to be static in your API example
+    formData.append('rooms', rooms.toString()); // You might want to add these as states so the user can input them
+    formData.append('bedrooms', bedrooms.toString());
+    formData.append('bathrooms', bathrooms.toString());
+    formData.append('beds', beds.toString());
+    formData.append('parking', '1'); // Static value as example
+    formData.append('area', '456 m²'); // Static value as example
+
+ setload(true)
+    try {
+      const response = await axios({
+        method: 'post',
+        url: 'https://bonstay.democlientlink.com/api/v1/bonstay/host/property/create',
+        data: formData,
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          Authorization: `Bearer ${token}`, // Replace yourToken with the actual token
+        },
+      });
+      console.log(formData,"09876r4ioui87ytuy");
+
+      console.log(response.data);
+      setload(false)
+    } catch (error) {
+      console.error(error);
+      setload(false)
+
+    }
+  };
   return (
+  <>
+  {load?<Loader/>:
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" />
-      <ScrollView>
-        <Arroeback
-          title="Edit"
-          leftIconName="arrowleft"
-          rightIcons={rightIcons}
-        />
-        <View style={styles.blubg} />
-        <View style={{padding: 20}}>
-          <View style={styles.locationsinglebox}>
-            <View style={styles.locationimagebox}>
-              <Image
-                source={Images.locationimage}
-                style={styles.locationimage}
-              />
-            </View>
-            <View style={styles.locationcontent}>
-              <View style={{flexDirection: 'row', alignItems: 'center'}}>
-                <AntDesign name="star" size={20} color="#ffbf75" />
-                <Text style={styles.stars}>4.8</Text>
-                <Text style={styles.starsusers}>73</Text>
-              </View>
-              <Text style={styles.housedetail}>
-                Entire Mountain View House in California
-              </Text>
-              <Text style={styles.houseplace}>Kadaghari, Kathmandu</Text>
-              <View
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  paddingTop: height * 0.02,
-                }}>
-                <View style={styles.roomspecs}>
-                  <Ionicons name="bed" size={22} color="#7c7e87" />
-                  <Text style={styles.roomspectext}>2 room</Text>
-                </View>
-
-                <View style={styles.roomspecs}>
-                  <MaterialCommunityIcons
-                    name="home-plus"
-                    size={22}
-                    color="#7c7e87"
-                  />
-                  <Text style={styles.roomspectext}>673 m2</Text>
-                </View>
-              </View>
-              <View
-                style={{
-                  flexDirection: 'row',
-                  justifyContent: 'space-between',
-                  paddingTop: height * 0.04,
-                }}>
-                <Text>
-                  <Text style={styles.price}>1290</Text>
-                  <Text style={styles.slashAndMonth}>/ month</Text>
-                </Text>
-                <TouchableOpacity>
-                  <AntDesign name="hearto" size={26} color="#7c7e87" />
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-          <View>
-            <Text style={styles.listing}>Listing Title</Text>
-
-            <TextInput
-              placeholder="Listing Title"
-              style={styles.input}
-              placeholderTextColor={'#000'}
-            />
-          </View>
-          <View>
-            <Text style={styles.listing}>Property category</Text>
-
-            <View style={styles.categeroycontainer}>
-              {renderCategoryButton('House', selectedCategory === 'House')}
-              {renderCategoryButton(
-                'Apartment',
-                selectedCategory === 'Apartment',
-              )}
-              {renderCategoryButton('Cottage', selectedCategory === 'Cottage')}
-              {renderCategoryButton('Villa', selectedCategory === 'Villa')}
-              {renderCategoryButton('Hotel', selectedCategory === 'Hotel')}
-            </View>
-          </View>
-          <View>
-            <Text style={styles.listing}>Add Home facilities</Text>
-
-            <View style={styles.categeroycontainer}>
-              {renderFacilitiesButton('Any', selectfacilities === 'Any')}
-              {renderFacilitiesButton('Wifi', selectfacilities === 'Wifi')}
-              {renderFacilitiesButton(
-                'Self chek-in',
-                selectfacilities === 'Self chek-in',
-              )}
-              {renderFacilitiesButton(
-                'Free parking',
-                selectfacilities === 'Free parking',
-              )}
-              {renderFacilitiesButton(
-                'Air conditioner',
-                selectfacilities === 'Air conditioner',
-              )}
-              {renderFacilitiesButton(
-                'Security',
-                selectfacilities === 'Security',
-              )}
-            </View>
-          </View>
-          <View>
-            <Text style={styles.listing}>Location</Text>
-
-            <View>
-              <TextInput
-                style={styles.input}
-                placeholder="Search for a place"
-                value={searchQuery}
-                onChangeText={handleSearch}
-                placeholderTextColor={'#000'}
-              />
-              <TouchableOpacity
-                onPress={() => {
-                  setSearchQuery(suggestion.description); // This sets the selected place's description
-                  setAutoCompleteResults([]);
-                  fetchCoordinates(suggestion.place_id);
-                }}
-                style={styles.searchButton}>
-                <AntDesign
-                  name="search1"
-                  size={calculateFontSize(20)}
-                  color="#000"
-                />
-              </TouchableOpacity>
-            </View>
-            <View>
-              {autoCompleteResults.map(suggestion => (
-                <TouchableOpacity
-                  key={suggestion.place_id}
-                  onPress={() => {
-                    setSearchQuery(suggestion.description);
-                    setAutoCompleteResults([]);
-                    fetchCoordinates(suggestion.place_id); // You might need to fetch the place details by place_id to get the location
-                  }}>
-                  <Text style={styles.suggestionItem}>
-                    {suggestion.description}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-            <View style={styles.iconContainer}>
-              <TouchableOpacity>
-                <Icon name="location-on" size={24} color={'#000'} />
-              </TouchableOpacity>
-              <View style={styles.addressTextContainer}>
-                {/* <Text style={styles.addressLine}> */}
-                {/* Jl. Gerungsang, Bulusan,Kec. Tembalang, Kota
-                </Text> */}
-                <Text style={styles.addressLine}>{searchQuery}</Text>
-              </View>
-            </View>
-            <View style={styles.mapimagecontainer}>
-              <MapView
-                style={styles.map}
-                provider={PROVIDER_GOOGLE}
-                region={markerCoords} // Use 'region' instead of 'initialRegion' to re-center the map
-                onRegionChangeComplete={region => setMarkerCoords(region)} // Update the region whenever it changes
-                // initialRegion={markerCoords}
-              >
-                {markerCoords && (
-                  <Marker
-                    coordinate={{
-                      latitude: markerCoords.latitude,
-                      longitude: markerCoords.longitude,
-                    }}
-                    title="Selected Location"
-                  />
-                )}
-              </MapView>
-              {/* <Image
-                source={Images.mapimage}
-                style={{width: '100%', height: '100%'}}
-              /> */}
-            </View>
-          </View>
-          <View>
-            <Text style={styles.listing}>Listing Photos</Text>
-
-            <View style={styles.listingphotos}>
-              <FlatList
-                horizontal={true}
-                data={images}
-                keyExtractor={(item, index) => index.toString()}
-                renderItem={({item}) => {
-                  console.log(item.uri); // Check if the URIs are correct
-                  return (
-                    <Image
-                      source={{uri: item.uri}}
-                      style={styles.image}
-                      resizeMode="cover"
-                    />
-                  );
-                }}
-              />
-
-              <TouchableOpacity
-                style={styles.uploadButton}
-                onPress={handleImagePicker}>
-                <Ionicons name="add-circle-outline" size={40} color="black" />
-              </TouchableOpacity>
-              {/* <TouchableOpacity style={styles.degreebutton}>
-                <Ionicons name="videocam" size={24} color="#00AAE5" />
-                <Text style={styles.degreetext}>Watch 360</Text>
-              </TouchableOpacity> */}
-            </View>
-          </View>
-          <View>
-            <Text style={styles.listing}>Price range</Text>
-            <Text>
-              ${sliderValues[0]} - ${sliderValues[1]}+/Daily
-            </Text>
+    <StatusBar barStyle="dark-content" />
+    <ScrollView>
+      <Arroeback
+        title="Edit"
+        leftIconName="arrowleft"
+        rightIcons={rightIcons}
+      />
+      <View style={styles.blubg} />
+      <View style={{padding: 20}}>
+        <View style={styles.locationsinglebox}>
+          <View style={styles.locationimagebox}>
             <Image
-              source={Images.graphrange}
-              style={{width: '100%', height: 88}}
+              source={Images.locationimage}
+              style={styles.locationimage}
             />
-            <View style={{position: 'relative', bottom: 25}}>
-              <MultiSlider
-                values={[sliderValues[0], sliderValues[1]]}
-                sliderLength={350} // Width of the slider
-                onValuesChange={sliderChange} // Function to handle changes in slider
-                min={0} // Minimum value
-                max={3000} // Maximum value
-                customMarker={CustomMarker}
-                step={1} // Step value for each slider move
-                selectedStyle={{
-                  backgroundColor: '#00AAE5', // Color of the selected part of the slider
-                }}
-                unselectedStyle={{
-                  backgroundColor: '#7ADDFC', // Color of the unselected part of the slider
-                }}
-              />
+          </View>
+          <View style={styles.locationcontent}>
+            <View style={{flexDirection: 'row', alignItems: 'center'}}>
+              <AntDesign name="star" size={20} color="#ffbf75" />
+              <Text style={styles.stars}>4.8</Text>
+              <Text style={styles.starsusers}>73</Text>
             </View>
+            <Text style={styles.housedetail}>
+              Entire Mountain View House in California
+            </Text>
+            <Text style={styles.houseplace}>Kadaghari, Kathmandu</Text>
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                paddingTop: height * 0.02,
+              }}>
+              <View style={styles.roomspecs}>
+                <Ionicons name="bed" size={22} color="#7c7e87" />
+                <Text style={styles.roomspectext}>2 room</Text>
+              </View>
 
-            <View style={styles.categeroycontainer}>
-              {renderFacilitiesButton('Any', selectfacilities === 'Any')}
-              {renderFacilitiesButton('Wifi', selectfacilities === 'Wifi')}
-              {renderFacilitiesButton(
-                'Self chek-in',
-                selectfacilities === 'Self chek-in',
-              )}
-            </View>
-          </View>
-          <View style={{marginTop: height * 0.06}}>
-            <Text style={styles.listing}>Rooms and beds</Text>
-            <View style={styles.singlerbdetail}>
-              <View>
-                <Text style={styles.rbtext}>Bedrooms</Text>
-              </View>
-              <View style={{flexDirection: 'row'}}>
-                <TouchableOpacity onPress={() => decrement('bedrooms')}>
-                  <AntDesign name="minuscircleo" size={24} color="black" />
-                </TouchableOpacity>
-                <Text style={styles.rbdetail}>{bedrooms}</Text>
-                <TouchableOpacity onPress={() => increment('bedrooms')}>
-                  <AntDesign name="pluscircleo" size={24} color="black" />
-                </TouchableOpacity>
+              <View style={styles.roomspecs}>
+                <MaterialCommunityIcons
+                  name="home-plus"
+                  size={22}
+                  color="#7c7e87"
+                />
+                <Text style={styles.roomspectext}>673 m2</Text>
               </View>
             </View>
-            <View style={styles.singlerbdetail}>
-              <View>
-                <Text style={styles.rbtext}>Bathrooms</Text>
-              </View>
-              <View style={{flexDirection: 'row'}}>
-                <TouchableOpacity onPress={() => decrement('bathrooms')}>
-                  <AntDesign name="minuscircleo" size={24} color="#BABCBF" />
-                </TouchableOpacity>
-                <Text style={styles.rbdetail}>{bathrooms}</Text>
-                <TouchableOpacity onPress={() => increment('bathrooms')}>
-                  <AntDesign name="pluscircleo" size={24} color="black" />
-                </TouchableOpacity>
-              </View>
+            <View
+              style={{
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                paddingTop: height * 0.04,
+              }}>
+              <Text>
+                <Text style={styles.price}>1290</Text>
+                <Text style={styles.slashAndMonth}>/ month</Text>
+              </Text>
+              <TouchableOpacity>
+                <AntDesign name="hearto" size={26} color="#7c7e87" />
+              </TouchableOpacity>
             </View>
-            <View style={styles.singlerbdetail}>
-              <View>
-                <Text style={styles.rbtext}>Beds</Text>
-              </View>
-              <View style={{flexDirection: 'row'}}>
-                <TouchableOpacity onPress={() => decrement('beds')}>
-                  <AntDesign name="minuscircleo" size={24} color="#BABCBF" />
-                </TouchableOpacity>
-                <Text style={styles.rbdetail}>{beds}</Text>
-                <TouchableOpacity onPress={() => increment('beds')}>
-                  <AntDesign name="pluscircleo" size={24} color="black" />
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-          <View style={{marginTop: height * 0.06}}>
-            <Text style={styles.listing}>About location’s neighborhood</Text>
-            <TextInput
-              style={styles.textInput}
-              onChangeText={setDescription}
-              value={description}
-              placeholder="About location’s neighborhood"
-              multiline
-              placeholderTextColor={'#000'}
-            />
-          </View>
-          <View style={styles.bottombutton}>
-            <TouchableOpacity style={styles.footersavebtn}>
-              <Text style={styles.footersavebtntext}>Save</Text>
-            </TouchableOpacity>
           </View>
         </View>
-      </ScrollView>
-    </SafeAreaView>
+        <View>
+          <Text style={styles.listing}>Listing Title</Text>
+
+          <TextInput
+            placeholder="Listing Title"
+            style={styles.input}
+            placeholderTextColor={'#000'}
+            value={listingTitle} // Set the value to our state variable
+            onChangeText={setListingTitle} // Update the state variable whenever text changes
+          />
+        </View>
+        <View>
+          <Text style={styles.listing}>Property category</Text>
+
+          <View style={styles.categeroycontainer}>
+            {renderCategoryButton('House', selectedCategory === 'House')}
+            {renderCategoryButton(
+              'Apartment',
+              selectedCategory === 'Apartment',
+            )}
+            {renderCategoryButton('Cottage', selectedCategory === 'Cottage')}
+            {renderCategoryButton('Villa', selectedCategory === 'Villa')}
+            {renderCategoryButton('Hotel', selectedCategory === 'Hotel')}
+          </View>
+        </View>
+        <View>
+          <Text style={styles.listing}>Add Home facilities</Text>
+
+          <View style={styles.categeroycontainer}>
+            {renderFacilitiesButton('Any')}
+            {renderFacilitiesButton('Wifi')}
+            {renderFacilitiesButton('Self check-in')}
+            {renderFacilitiesButton('Free parking')}
+            {renderFacilitiesButton('Air conditioner')}
+            {renderFacilitiesButton('Security')}
+          </View>
+        </View>
+        <View>
+          <Text style={styles.listing}>Location</Text>
+
+          <View>
+            <TextInput
+              style={styles.input}
+              placeholder="Search for a place"
+              value={searchQuery}
+              onChangeText={handleSearch}
+              placeholderTextColor={'#000'}
+            />
+            <TouchableOpacity
+              onPress={() => {
+                setSearchQuery(suggestion.description); // This sets the selected place's description
+                setAutoCompleteResults([]);
+                fetchCoordinates(suggestion.place_id);
+              }}
+              style={styles.searchButton}>
+              <AntDesign
+                name="search1"
+                size={calculateFontSize(20)}
+                color="#000"
+              />
+            </TouchableOpacity>
+          </View>
+          <View>
+            {autoCompleteResults.map(suggestion => (
+              <TouchableOpacity
+                key={suggestion.place_id}
+                onPress={() => {
+                  setSearchQuery(suggestion.description);
+                  setAutoCompleteResults([]);
+                  fetchCoordinates(suggestion.place_id); // You might need to fetch the place details by place_id to get the location
+                }}>
+                <Text style={styles.suggestionItem}>
+                  {suggestion.description}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          <View style={styles.iconContainer}>
+            <TouchableOpacity>
+              <Icon name="location-on" size={24} color={'#000'} />
+            </TouchableOpacity>
+            <View style={styles.addressTextContainer}>
+              {/* <Text style={styles.addressLine}> */}
+              {/* Jl. Gerungsang, Bulusan,Kec. Tembalang, Kota
+              </Text> */}
+              <Text style={styles.addressLine}>{searchQuery}</Text>
+            </View>
+          </View>
+          <View style={styles.mapimagecontainer}>
+            <MapView
+              style={styles.map}
+              provider={PROVIDER_GOOGLE}
+              region={markerCoords} // Use 'region' instead of 'initialRegion' to re-center the map
+              onRegionChangeComplete={region => setMarkerCoords(region)} // Update the region whenever it changes
+              // initialRegion={markerCoords}
+            >
+              {markerCoords && (
+                <Marker
+                  coordinate={{
+                    latitude: markerCoords.latitude,
+                    longitude: markerCoords.longitude,
+                  }}
+                  title="Selected Location"
+                />
+              )}
+            </MapView>
+            {/* <Image
+              source={Images.mapimage}
+              style={{width: '100%', height: '100%'}}
+            /> */}
+          </View>
+        </View>
+        <View>
+          <Text style={styles.listing}>Listing Photos</Text>
+
+          <View style={styles.listingphotos}>
+            <FlatList
+              horizontal={true}
+              data={images}
+              keyExtractor={(item, index) => index.toString()}
+              renderItem={({item}) => {
+                console.log(item.uri); // Check if the URIs are correct
+                return (
+                  <Image
+                    source={{uri: item.uri}}
+                    style={styles.image}
+                    resizeMode="cover"
+                  />
+                );
+              }}
+            />
+
+            <TouchableOpacity
+              style={styles.uploadButton}
+              onPress={handleImagePicker}>
+              <Ionicons name="add-circle-outline" size={40} color="black" />
+            </TouchableOpacity>
+            {/* <TouchableOpacity style={styles.degreebutton}>
+              <Ionicons name="videocam" size={24} color="#00AAE5" />
+              <Text style={styles.degreetext}>Watch 360</Text>
+            </TouchableOpacity> */}
+          </View>
+        </View>
+        <View>
+          <Text style={styles.listing}>Price range</Text>
+          {/* <Text>
+            ${sliderValues[0]} - ${sliderValues[1]}+/Daily
+          </Text>
+          <Image
+            source={Images.graphrange}
+            style={{width: '100%', height: 88}}
+          /> */}
+          <View>
+            <TextInput
+              style={styles.input}
+              onChangeText={setValue}
+              value={value}
+              placeholder="Price"
+              keyboardType="numeric"
+              placeholderTextColor="gray"
+            />
+          </View>
+
+          <View style={styles.categeroycontainer}>
+            {renderRentTypeButton('Daily', selectedrenttype === 'Daily')}
+            {renderRentTypeButton('Weekly', selectedrenttype === 'Weekly')}
+            {renderRentTypeButton('Monthly', selectedrenttype === 'Monthly')}
+            {renderRentTypeButton(
+              'Annually',
+              selectedrenttype === 'Annually',
+            )}
+          </View>
+        </View>
+        <View style={{marginTop: height * 0.06}}>
+          <Text style={styles.listing}>Rooms and beds</Text>
+          <View style={styles.singlerbdetail}>
+            <View>
+              <Text style={styles.rbtext}>Bedrooms</Text>
+            </View>
+            <View style={{flexDirection: 'row'}}>
+              <TouchableOpacity onPress={() => decrement('bedrooms')}>
+                <AntDesign name="minuscircleo" size={24} color="black" />
+              </TouchableOpacity>
+              <Text style={styles.rbdetail}>{bedrooms}</Text>
+              <TouchableOpacity onPress={() => increment('bedrooms')}>
+                <AntDesign name="pluscircleo" size={24} color="black" />
+              </TouchableOpacity>
+            </View>
+          </View>
+          <View style={styles.singlerbdetail}>
+            <View>
+              <Text style={styles.rbtext}>Rooms</Text>
+            </View>
+            <View style={{flexDirection: 'row'}}>
+              <TouchableOpacity onPress={() => decrement('rooms')}>
+                <AntDesign name="minuscircleo" size={24} color="#BABCBF" />
+              </TouchableOpacity>
+              <Text style={styles.rbdetail}>{rooms}</Text>
+              <TouchableOpacity onPress={() => increment('rooms')}>
+                <AntDesign name="pluscircleo" size={24} color="black" />
+              </TouchableOpacity>
+            </View>
+          </View>
+          <View style={styles.singlerbdetail}>
+            <View>
+              <Text style={styles.rbtext}>Bathrooms</Text>
+            </View>
+            <View style={{flexDirection: 'row'}}>
+              <TouchableOpacity onPress={() => decrement('bathrooms')}>
+                <AntDesign name="minuscircleo" size={24} color="#BABCBF" />
+              </TouchableOpacity>
+              <Text style={styles.rbdetail}>{bathrooms}</Text>
+              <TouchableOpacity onPress={() => increment('bathrooms')}>
+                <AntDesign name="pluscircleo" size={24} color="black" />
+              </TouchableOpacity>
+            </View>
+          </View>
+          <View style={styles.singlerbdetail}>
+            <View>
+              <Text style={styles.rbtext}>Beds</Text>
+            </View>
+            <View style={{flexDirection: 'row'}}>
+              <TouchableOpacity onPress={() => decrement('beds')}>
+                <AntDesign name="minuscircleo" size={24} color="#BABCBF" />
+              </TouchableOpacity>
+              <Text style={styles.rbdetail}>{beds}</Text>
+              <TouchableOpacity onPress={() => increment('beds')}>
+                <AntDesign name="pluscircleo" size={24} color="black" />
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+        <View style={{marginTop: height * 0.06}}>
+          <Text style={styles.listing}>About location’s neighborhood</Text>
+          <TextInput
+            style={styles.textInput}
+            onChangeText={setDescription}
+            value={description}
+            placeholder="About location’s neighborhood"
+            multiline
+            placeholderTextColor={'#000'}
+          />
+        </View>
+        <View style={styles.containeraverg}>
+          <TextInput
+            style={styles.inputaverg}
+            onChangeText={setValue}
+            value={value}
+            placeholder="Average living cost"
+            keyboardType="numeric"
+            placeholderTextColor="gray"
+          />
+          <Text style={styles.currency}>$/month</Text>
+        </View>
+
+        <View style={styles.facicontainer}>
+          <Text style={styles.title}>Add Nearest Public Facility</Text>
+          <TextInput
+            style={styles.input}
+            onChangeText={setFacilityName}
+            value={facilityName}
+            placeholder="Facility Name"
+          />
+          <TextInput
+            style={styles.input}
+            onChangeText={setInput}
+            value={input}
+            placeholder="Distance in meters"
+            keyboardType="numeric"
+          />
+          <TouchableOpacity
+            title="OK"
+            style={{
+              backgroundColor: '#00AAE5',
+              width: width * 0.09,
+              justifyContent: 'center',
+              alignItems: 'center',
+              borderRadius: 5,
+            }}
+            onPress={handleAddFacility}>
+            <Text style={styles.footersavebtntext}>ok</Text>
+          </TouchableOpacity>
+
+          {renderFacilitiesList()}
+        </View>
+
+        <View style={styles.bottombutton}>
+          <TouchableOpacity
+            style={styles.footersavebtn}
+            onPress={submitProperty}>
+            <Text style={styles.footersavebtntext}>Save</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </ScrollView>
+  </SafeAreaView>
+  }
+  </>
   );
 };
 
@@ -570,7 +743,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingBottom: 100,
-    backgroundColor:"#fff"
+    backgroundColor: '#fff',
   },
   blubg: {
     width: width,
@@ -647,7 +820,7 @@ const styles = StyleSheet.create({
     borderRadius: 100,
     padding: 10,
     paddingHorizontal: width * 0.04,
-    backgroundColor: '#D9D9D9',
+    // backgroundColor: '#D9D9D9',
     color: '#000',
   },
   // New styles for category buttons
@@ -794,10 +967,67 @@ const styles = StyleSheet.create({
   textInput: {
     borderColor: '#000',
     borderWidth: 1,
-    borderRadius: 5,
+    borderRadius: 100,
   },
   bottombutton: {
     marginVertical: height * 0.03,
+  },
+  containeraverg: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    backgroundColor: 'white',
+    borderRadius: 25,
+    borderWidth: 1,
+    // borderColor: '#ddd',
+    shadowColor: 'black',
+    shadowOffset: {width: 0, height: 2},
+    shadowRadius: 6,
+    shadowOpacity: 0.1,
+    elevation: 2,
+    marginVertical: height * 0.03,
+  },
+
+  currency: {
+    fontSize: 16,
+    color: 'black',
+    // position:"absolute"
+  },
+  inputaverg: {
+    // borderWidth: 1,
+    borderRadius: 100,
+    padding: 10,
+    paddingHorizontal: width * 0.04,
+    // backgroundColor: '#D9D9D9',
+    color: '#000',
+  },
+  // facicontainer: {
+  //   padding: 20,
+  //   backgroundColor: '#fff',
+  // },
+  title: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#000',
+    borderRadius: 5,
+    padding: 10,
+    marginBottom: 10,
+    fontSize: 16,
+    borderRadius: 100,
+  },
+  facility: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  facilityText: {
+    fontSize: 16,
   },
 });
 

@@ -73,6 +73,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#222',
     justifyContent: 'center',
     alignItems: 'center',
+
   },
   loader: {
     width: 100, // Approximate conversion of em to pixels
